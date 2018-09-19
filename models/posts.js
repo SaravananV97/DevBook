@@ -15,22 +15,20 @@ const postSchema = new Schema({
         path: String, contentType: String
     },
     likes:{
-        count: String,
+        count: {
+            type:String,
+            default: 0
+        },
         users:[{type:Schema.Types.ObjectId,
             ref:"User"}]
     },
     comments:[
         {
-        cmnt:String, 
+        comment:String, 
         user:{
         type:Schema.Types.ObjectId,
         ref:"User"
     },
-    likes:{
-        count: String,
-        users:[{type:Schema.Types.ObjectId,
-            ref:"User"}]
-    }
         }]
 });
 

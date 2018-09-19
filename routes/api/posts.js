@@ -11,9 +11,143 @@ router.get("/test",(req,res) => {
     res.json({posts: "Done"});
 })
 const uploading = multer({dest: "C:\\Users\\Saravanan\\Pictures\\DevBook\\Posts\\Images"})
-//@Routes /api/posts/
+
+//@Routes /api/posts/comment/:post_id
 //@desc test create posts
-//@access public
+//@access protected
+
+
+router.post("/comment/:post_id",passport.authenticate("jwt",{session:false}),(req,res) => {
+    Post.findOne({_id:req.params.post_id})
+    .then((post) => {
+        if(post){
+            let comment = req.body.comment;
+            console.log(comment);
+            let l = post.comments.length;
+            post.comments[l] = {comment, user: req.user.id}
+            const newPost = new Post(post);
+            newPost.save()
+            .then((post) => res.json(post))
+            .catch((err) => res.json(err))
+        }
+        else
+            res.status(404).json({msg: "post not found"})
+    }).catch(err => res.json(err)) 
+});
+
+//@Routes /api/posts/deletecmnt/:post_id/:cmnt_id
+//@desc test create posts
+//@access protected
+
+
+router.delete("/comment/:post_id/:cmnt_id",passport.authenticate("jwt",{session:false}),(req,res) => {
+    Post.findOne({_id:req.params.post_id})
+    .then((post) => {
+        if(post){
+            let index = 0;
+            let f = false;
+            let l = post.comments.length;
+            for(let i = 0; i< l; i++){
+                if(post.comments[i]._id == req.params.cmnt_id){
+                    index = i;
+                    f = true;
+                }
+            }
+            if(f){
+                post.comments.splice(index,1);
+                post.save()
+                .then((post) => res.json(post))
+                .catch((err) => res.json(err))
+            }
+            else{
+                res.status(404).json({msg: "That comment not found"})
+            }
+        }
+        else
+            res.status(404).json({msg: "post not found"})
+    }).catch(err => res.json(err)) 
+});
+
+
+//@Routes /api/posts/like/:post_id
+//@desc test create posts
+//@access protected
+
+router.post("/like/:post_id",passport.authenticate("jwt",{session:false}),(req,res) => {
+
+    Post.findOne({_id:req.params.post_id})
+    .then((post) => {
+        if(post){
+            let l = parseInt(post.likes.count);
+            if(l === 0){
+                post.likes.users[l] = req.user.id;
+                console.log(post.likes.users);
+                post.likes.count = l + 1;
+                const newPost= new Post(post);
+                newPost.save()
+                .then((post) => {
+                    res.json(post)
+                })
+                .catch((err) => res.json(err)) 
+            }
+            else{
+            let f = false
+            for(let i = 0; i<l; i++){
+                if( post.likes.users[i]._id == req.user.id){
+                    f = true
+                    break;
+                }
+            }
+            if(f)
+                res.json({msg: "user already liked the post"})   
+            else{
+                    post.likes.users[l] = req.user.id;
+                    post.likes.count = l + 1;
+                    const newPost = new Post(post);
+                    newPost.save()
+                    .then((post) => {
+                        res.json(post)
+                    })
+                    .catch((err) => res.json(err)) 
+                }
+        }
+    }
+});
+});
+
+
+//@Routes /api/posts/like/:post_id
+//@desc test create posts
+//@access protected
+
+router.post("/dislike/:post_id",passport.authenticate("jwt",{session:false}),(req,res) => {
+
+    Post.findOne({_id:req.params.post_id})
+    .then((post) => {
+        if(post){
+            let l = parseInt(post.likes.count);
+            let f = false
+            let index = 0
+            for(let i = 0; i<l; i++){
+                if( post.likes.users[i]._id == req.user.id){
+                    f = true
+                    index = i;
+                    break;
+                }
+            }
+            if(f){
+                post.likes.users.splice(index, 1);
+                post.likes.count = l-1;
+                post.save()
+                .then(post => res.json(post))
+                .catch(err => res.json(err))
+            }
+            else{
+                res.json({msg: "Not liked yet"})
+        }
+    }
+});
+});
 
 router.post("/",uploading.single("avatar"),passport.authenticate("jwt",{session: false}),(req,res) => {
     const newPost = {}
